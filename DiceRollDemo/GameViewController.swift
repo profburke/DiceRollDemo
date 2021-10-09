@@ -14,6 +14,7 @@ class GameViewController: UIViewController {
     private var scnScene: SCNScene!
     private var cameraNode: SCNNode!
     private var diceNodes: [SCNNode] = []
+    private var speeds: [SCNVector3] = []
 
     func setupView() {
         scnView = view as? SCNView
@@ -69,6 +70,10 @@ class GameViewController: UIViewController {
         diceNodes.append(createDie(position: SCNVector3(-4, 0, 0), sides: sides))
         diceNodes.append(createDie(position: SCNVector3(4, 0, 0), sides: sides))
         diceNodes.append(createDie(position: SCNVector3(0, 0, 0), sides: sides))
+
+        speeds.append(SCNVector3(0, 0, 0))
+        speeds.append(SCNVector3(0, 0, 0))
+        speeds.append(SCNVector3(0, 0, 0))
 
         let torque = SCNVector4(1, 2, -1, 1)
         for die in diceNodes {
@@ -135,8 +140,24 @@ class GameViewController: UIViewController {
             return .all
         }
     }
+}
 
+extension SCNVector3 {
+    var isZero: Bool {
+        return self.x == 0.0 && self.y == 0.0 && self.z == 0.0
+    }
 }
 
 extension GameViewController: SCNSceneRendererDelegate {
+    func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+        for (num, die) in diceNodes.enumerated() {
+            if let pb = die.physicsBody {
+                let os = speeds[num]
+                if !os.isZero && pb.velocity.isZero {
+                    print("Die \(num) - Up index: \(boxUpIndex(n: die.presentation))")
+                }
+                speeds[num] = pb.velocity
+            }
+        }
+    }
 }

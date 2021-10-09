@@ -93,3 +93,41 @@ func SCNVector3Normalize(vector: SCNVector3) -> SCNVector3 {
 
     return SCNVector3Make(vector.x * scale, vector.y * scale, vector.z*scale)
 }
+
+// https://stackoverflow.com/questions/24110918/get-up-side-of-scnnode-from-orientation
+func boxUpIndex(n: SCNNode) -> Int {
+    let rotation = n.rotation
+    let invRotation = SCNVector4(rotation.x,
+                                 rotation.y,
+                                 rotation.z,
+                                 -rotation.w)
+    let up = SCNVector3(0, 1, 0)
+    let transform = SCNMatrix4MakeRotation(invRotation.w,
+                                           invRotation.x,
+                                           invRotation.y,
+                                           invRotation.z)
+    let glkTransform = SCNMatrix4ToGLKMatrix4(transform)
+    let glkUp = SCNVector3ToGLKVector3(up)
+    let rotatedUp = GLKMatrix4MultiplyVector3(glkTransform, glkUp)
+    let boxNormals: [GLKVector3] = [
+        GLKVector3(v: (0, 0, 1)),
+        GLKVector3(v: (1, 0, 0)),
+        GLKVector3(v: (0, 0, -1)),
+        GLKVector3(v: (-1, 0, 0)),
+        GLKVector3(v: (0, 1, 0)),
+        GLKVector3(v: (0, -1, 0)),
+    ]
+
+    var bestIndex = 0
+    var maxDot: Float = -1.0
+
+    for (i, bNormal) in boxNormals.enumerated() {
+        let dot = GLKVector3DotProduct(bNormal, rotatedUp)
+        if dot > maxDot {
+            maxDot = dot;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex
+}
